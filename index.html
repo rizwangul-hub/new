@@ -648,14 +648,11 @@
     <!-- Canvas background for gentle floating heart particles -->
     <canvas id="heart-canvas"></canvas>
 
-    <!-- ==========================================================================
-         STEP 2: AUDIO FILE PLACEHOLDER
-         Replace "song.mp3" below with your audio file path or URL (e.g., "assets/our_song.mp3")
-         ========================================================================== -->
-    <audio id="bg-music" loop>
-        <source src="https://youtu.be/RrDNKXhpSIE?si=eeOIkQwTHWKE3LUp" type="audio/mpeg">
-        Your browser does not support the audio element.
-    </audio>
+    <!-- Standard HTML5 Audio element for MP3 files -->
+    <audio id="bg-music" loop></audio>
+
+    <!-- Offscreen container for YouTube video player -->
+    <div id="youtube-player-container" style="position:fixed; left:-9999px; top:-9999px; width:1px; height:1px; opacity:0; pointer-events:none;"></div>
 
     <!-- Floating Audio Player Widget -->
     <div class="music-player-widget">
@@ -713,33 +710,33 @@
                 <div class="gallery-grid">
                     
                     <!-- Polaroid Photo 1 -->
-                    <div class="polaroid-card" onclick="openLightbox('smile.jpg', 'Your Beautiful Smile ✨')">
+                    <div class="polaroid-card" onclick="openLightbox('https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=800&auto=format&fit=crop', 'Your Beautiful Smile ✨')">
                         <div class="polaroid-img-wrapper">
-                            <img src="smile.jpg" alt="Photo 1">
+                            <img src="https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=800&auto=format&fit=crop" alt="Photo 1">
                         </div>
                         <div class="polaroid-caption">Your Beautiful Smile ✨</div>
                     </div>
 
                     <!-- Polaroid Photo 2 -->
-                    <div class="polaroid-card" onclick="openLightbox('un.jpg', 'Unforgettable Days 💕')">
+                    <div class="polaroid-card" onclick="openLightbox('https://images.unsplash.com/photo-1522673607200-164d1b6ce486?q=80&w=800&auto=format&fit=crop', 'Unforgettable Days 💕')">
                         <div class="polaroid-img-wrapper">
-                            <img src="un.jpg" alt="Photo 2">
+                            <img src="https://images.unsplash.com/photo-1522673607200-164d1b6ce486?q=80&w=800&auto=format&fit=crop" alt="Photo 2">
                         </div>
                         <div class="polaroid-caption">Unforgettable Days 💕</div>
                     </div>
 
                     <!-- Polaroid Photo 3 -->
-                    <div class="polaroid-card" onclick="openLightbox('favoirt.jpg', 'My Favorite Person 🌸')">
+                    <div class="polaroid-card" onclick="openLightbox('https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=800&auto=format&fit=crop', 'My Favorite Person 🌸')">
                         <div class="polaroid-img-wrapper">
-                            <img src="favoirt.jpg" alt="Photo 3">
+                            <img src="https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=800&auto=format&fit=crop" alt="Photo 3">
                         </div>
                         <div class="polaroid-caption">My Favorite Person 🌸</div>
                     </div>
 
                     <!-- Polaroid Photo 4 -->
-                    <div class="polaroid-card" onclick="openLightbox('for.jpg', 'Forever & Always 💖')">
+                    <div class="polaroid-card" onclick="openLightbox('https://images.unsplash.com/photo-1529634806980-85c3dd6d34ac?q=80&w=800&auto=format&fit=crop', 'Forever & Always 💖')">
                         <div class="polaroid-img-wrapper">
-                            <img src="for.jpg" alt="Photo 4">
+                            <img src="https://images.unsplash.com/photo-1529634806980-85c3dd6d34ac?q=80&w=800&auto=format&fit=crop" alt="Photo 4">
                         </div>
                         <div class="polaroid-caption">Forever & Always 💖</div>
                     </div>
@@ -821,7 +818,14 @@
          ========================================================================== -->
     <script>
         /* --------------------------------------------------------------------------
-           1. STEP 3: PERSONAL LOVE MESSAGE TEXT
+           STEP 2: SONG SOURCE (LOCAL MP3 FILE OR YOUTUBE LINK)
+           You can paste ANY YouTube video URL (e.g. "https://youtu.be/RrDNKXhpSIE")
+           OR a local audio file path (e.g. "song.mp3") below!
+           -------------------------------------------------------------------------- */
+        const songSource = "https://youtu.be/RrDNKXhpSIE?si=eeOIkQwTHWKE3LUp";
+
+        /* --------------------------------------------------------------------------
+           STEP 3: PERSONAL LOVE MESSAGE TEXT
            Edit your message paragraph here inside the backticks!
            -------------------------------------------------------------------------- */
         const personalMessage = `From the moment you came into my life, everything became brighter, warmer, and so much more meaningful. You are not just my Bachii, but my best friend, my safe place, and my greatest happiness. 
@@ -829,7 +833,7 @@
 Thank you for every smile, every laugh, and every sweet moment we share. No matter where life takes us, my heart will always belong to you. I love you more and more with every single day that passes! ❤️✨`;
 
         /* --------------------------------------------------------------------------
-           2. GENTLE FLOATING HEART PARTICLES (CANVAS BACKGROUND)
+           CANVAS FLOATING HEART PARTICLES
            -------------------------------------------------------------------------- */
         const canvas = document.getElementById('heart-canvas');
         const ctx = canvas.getContext('2d');
@@ -875,7 +879,6 @@ Thank you for every smile, every laugh, and every sweet moment we share. No matt
                 ctx.fillStyle = this.color;
                 ctx.translate(this.x, this.y);
                 
-                // Draw heart shape
                 ctx.beginPath();
                 const topCurveHeight = this.size * 0.3;
                 ctx.moveTo(0, topCurveHeight);
@@ -903,7 +906,7 @@ Thank you for every smile, every laugh, and every sweet moment we share. No matt
         animateCanvas();
 
         /* --------------------------------------------------------------------------
-           3. OPENING SCREEN & MUSIC AUTO-START
+           SMART MUSIC PLAYER (SUPPORTS MP3 FILES & YOUTUBE LINKS)
            -------------------------------------------------------------------------- */
         const openBtn = document.getElementById('open-btn');
         const welcomeScreen = document.getElementById('welcome-screen');
@@ -914,33 +917,141 @@ Thank you for every smile, every laugh, and every sweet moment we share. No matt
         const musicStatus = document.getElementById('music-status');
 
         let isPlaying = false;
+        let ytPlayer = null;
+        let isYTReady = false;
 
-        function toggleMusic() {
-            if (isPlaying) {
-                bgMusic.pause();
-                discIcon.classList.remove('spinning');
-                musicStatus.textContent = 'Paused';
-                isPlaying = false;
+        function extractYouTubeId(url) {
+            if (!url) return null;
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        const ytVideoId = extractYouTubeId(songSource);
+
+        function startAudioAuto() {
+            if (isPlaying) return;
+            if (ytVideoId) {
+                if (ytPlayer && isYTReady) {
+                    ytPlayer.playVideo();
+                }
             } else {
                 bgMusic.play().then(() => {
                     discIcon.classList.add('spinning');
                     musicStatus.textContent = 'Playing ❤️';
                     isPlaying = true;
                 }).catch(err => {
-                    console.log("Audio play blocked or missing file:", err);
-                    musicStatus.textContent = 'Click to play';
+                    console.log("Waiting for user interaction to play audio...");
                 });
+            }
+        }
+
+        if (ytVideoId) {
+            // Load YouTube Iframe API
+            const tag = document.createElement('script');
+            tag.src = "https://www.youtube.com/iframe_api";
+            const firstScriptTag = document.getElementsByTagName('script')[0];
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+            window.onYouTubeIframeAPIReady = function() {
+                ytPlayer = new YT.Player('youtube-player-container', {
+                    height: '1',
+                    width: '1',
+                    videoId: ytVideoId,
+                    playerVars: {
+                        'autoplay': 1,
+                        'controls': 0,
+                        'loop': 1,
+                        'playlist': ytVideoId,
+                        'playsinline': 1
+                    },
+                    events: {
+                        'onReady': function(e) {
+                            isYTReady = true;
+                            musicStatus.textContent = 'Playing ❤️';
+                            // Attempt immediate playback on load
+                            try {
+                                e.target.playVideo();
+                            } catch(err) {
+                                console.log("Autoplay waiting for touch...");
+                            }
+                        },
+                        'onStateChange': function(event) {
+                            if (event.data === YT.PlayerState.PLAYING) {
+                                discIcon.classList.add('spinning');
+                                musicStatus.textContent = 'Playing ❤️';
+                                isPlaying = true;
+                            } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+                                discIcon.classList.remove('spinning');
+                                musicStatus.textContent = 'Paused';
+                                isPlaying = false;
+                            }
+                        },
+                        'onError': function() {
+                            musicStatus.textContent = 'Playback error';
+                            console.warn('YouTube playback error. Make sure embedding is allowed.');
+                        }
+                    }
+                });
+            };
+        } else {
+            // Standard Audio File (.mp3)
+            bgMusic.src = songSource;
+            bgMusic.autoplay = true;
+            window.addEventListener('DOMContentLoaded', startAudioAuto);
+        }
+
+        // Play or Pause toggle button handler
+        function toggleMusic() {
+            if (ytVideoId) {
+                if (ytPlayer && isYTReady) {
+                    if (isPlaying) {
+                        ytPlayer.pauseVideo();
+                    } else {
+                        ytPlayer.playVideo();
+                    }
+                } else {
+                    musicStatus.textContent = 'Loading audio...';
+                    setTimeout(() => {
+                        if (ytPlayer && ytPlayer.playVideo) {
+                            ytPlayer.playVideo();
+                        }
+                    }, 800);
+                }
+            } else {
+                if (isPlaying) {
+                    bgMusic.pause();
+                    discIcon.classList.remove('spinning');
+                    musicStatus.textContent = 'Paused';
+                    isPlaying = false;
+                } else {
+                    bgMusic.play().then(() => {
+                        discIcon.classList.add('spinning');
+                        musicStatus.textContent = 'Playing ❤️';
+                        isPlaying = true;
+                    }).catch(err => {
+                        console.log("Audio play blocked:", err);
+                        musicStatus.textContent = 'Click to play';
+                    });
+                }
             }
         }
 
         musicToggleBtn.addEventListener('click', toggleMusic);
 
+        // Instant Autoplay Listener: Start music immediately on the FIRST tap/click anywhere!
+        ['click', 'touchstart', 'pointerdown'].forEach(evtType => {
+            window.addEventListener(evtType, () => {
+                startAudioAuto();
+            }, { once: false });
+        });
+
         openBtn.addEventListener('click', () => {
             welcomeScreen.classList.add('hidden');
             mainContent.classList.add('visible');
 
-            // Attempt to start music on user interaction
-            toggleMusic();
+            // Trigger music start on entering
+            startAudioAuto();
 
             // Animate nicknames sequentially
             animateNicknames();
@@ -950,7 +1061,7 @@ Thank you for every smile, every laugh, and every sweet moment we share. No matt
         });
 
         /* --------------------------------------------------------------------------
-           4. INTERACTIVE TAP / CLICK POPUP EMOJI PARTICLES
+           INTERACTIVE TAP / CLICK POPUP EMOJI PARTICLES
            -------------------------------------------------------------------------- */
         const romanticEmojis = ['❤️', '😘', '💕', '💖', '🌹', '✨', '😍', '🌸'];
 
@@ -969,7 +1080,6 @@ Thank you for every smile, every laugh, and every sweet moment we share. No matt
         }
 
         document.addEventListener('click', (e) => {
-            // Don't spawn particle on button/card clicks to avoid visual clutter
             if (e.target.closest('button') || e.target.closest('.polaroid-card') || e.target.closest('.lightbox-content')) {
                 return;
             }
@@ -986,7 +1096,7 @@ Thank you for every smile, every laugh, and every sweet moment we share. No matt
         }, { passive: true });
 
         /* --------------------------------------------------------------------------
-           5. NICKNAMES SEQUENTIAL ANIMATION
+           NICKNAMES SEQUENTIAL ANIMATION
            -------------------------------------------------------------------------- */
         function animateNicknames() {
             const cards = document.querySelectorAll('.nickname-card');
@@ -998,14 +1108,14 @@ Thank you for every smile, every laugh, and every sweet moment we share. No matt
         }
 
         /* --------------------------------------------------------------------------
-           6. TYPEWRITER EFFECT FOR LOVE LETTER
+           TYPEWRITER EFFECT FOR LOVE LETTER
            -------------------------------------------------------------------------- */
         let typewriterStarted = false;
 
         function typeWriter() {
             const targetElement = document.getElementById('typewriter-text');
             let i = 0;
-            const speed = 35; // speed in milliseconds per character
+            const speed = 35;
 
             function typeNextChar() {
                 if (i < personalMessage.length) {
@@ -1032,7 +1142,7 @@ Thank you for every smile, every laugh, and every sweet moment we share. No matt
         }
 
         /* --------------------------------------------------------------------------
-           7. LIGHTBOX MODAL FOR POLAROID PHOTOS
+           LIGHTBOX MODAL FOR POLAROID PHOTOS
            -------------------------------------------------------------------------- */
         function openLightbox(imgSrc, captionText) {
             const modal = document.getElementById('lightbox-modal');
@@ -1052,7 +1162,7 @@ Thank you for every smile, every laugh, and every sweet moment we share. No matt
         }
 
         /* --------------------------------------------------------------------------
-           8. EXTRA LOVE HEART SHOWER BUTTON
+           EXTRA LOVE HEART SHOWER BUTTON
            -------------------------------------------------------------------------- */
         function triggerHeartShower() {
             for (let i = 0; i < 30; i++) {
